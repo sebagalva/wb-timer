@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <title>WB Timer Estimation - Dark</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #121212;
+      color: #e0e0e0;
+    }
+    label { display: block; margin-top: 10px; }
+    input { padding: 6px; margin-top: 4px; background:#1e1e1e; color:#fff; border:1px solid #444; }
+    button { margin-top: 15px; padding: 8px 14px; background:#333; color:#fff; border:1px solid #555; cursor:pointer; }
+    button:hover { background:#444; }
+
+    .day-block {
+      margin-top: 25px;
+      padding: 15px;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 6px;
+    }
+
+    .day-title {
+      font-size: 18px;
+      margin-bottom: 10px;
+      color: #9ad1ff;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 10px;
+    }
+    th, td {
+      border: 1px solid #333;
+      padding: 6px 8px;
+    }
+
+    .past { background-color: #5a1f1f; }
+    .next { background-color: #1f5a2e; }
+  </style>
+</head>
+<body>
+
+  <h1>WB Timer Estimation</h1>
+
+  <label>
+    Intervalle (min):
+    <input type="number" id="intervalMin" value="390.75" step="0.01">
+  </label>
+
+  <label>
+    Jours à prévoir:
+    <input type="number" id="daysToPlan" value="7" step="1">
+  </label>
+
+  <label>
+    Last update (seriale Excel):
+    <input type="number" id="lastUpdate" value="0" step="0.000000000001">
+  </label>
+
+  <button onclick="calculate()">Ricalcola</button>
+
+  <h3>ST Current Time: <span id="currentTime"></span></h3>
+
+  <div id="results"></div>
+
+  <script>
+    function excelSerialToDate(serial) {
+      const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+      const ms = serial * 24 * 60 * 60 * 1000;
+      return new Date(excelEpoch.getTime() + ms);
+    }
+
+    function dateToExcelSerial(date) {
+      const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+      const diffMs = date.getTime() - excelEpoch.getTime();
+      return diffMs / (24 * 60 * 60 * 1000);
+    }
+
+    function formatDateTime(date) {
+      const pad = n => String(n).padStart(2, '0');
+      return date.getFullYear() + '-' +
+             pad(date.getMonth() + 1) + '-' +
+             pad(date.getDate()) + ' ' +
+             pad(date.getHours()) + ':' +
+             pad(date.getMinutes()) + ':' +
+             pad(date.getSeconds());
+    }
+
+    function formatDateOnly(date) {
+      const pad = n => String(n).padStart(2, '0');
+      return date.getFullYear() + '-' +
+             pad(date.getMonth() + 1) + '-' +
+             pad(date.getDate());
+    }
+
+    async function fetchLastWB() {
+      try {
+        const res = await fetch("https://TUO_BACKEND_HOST/lastWB");
+        const data = await res.json();
+        document.getElementById("lastUpdate").value = data.lastWB;
+      } catch (e) {
+        console.error("Errore fetch lastWB:", e);
+      }
+    }
+
+    function calculate() {
+      const intervalMin = parseFloat(document.getElementById('intervalMin').value);
+      const daysToPlan = parseFloat(document.getElementById('daysToPlan').value);
+      const lastUpdateSerial = parseFloat(document.getElementById('lastUpdate').value);
+
+      const now = new Date();
+      document.getElementById('currentTime').textContent = formatDateTime(now);
+      const nowSerial = dateToExcelSerial(now);
+
+      const intervalDays = intervalMin / (60 * 24);
+      const maxSerial = lastUpdateSerial + daysToPlan;
+
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = '';
+
+      let currentSerial = lastUpdateSerial + intervalDays;
+      let nextMarked = false;
+
+      let currentDay = null;
+      let dayBlock = null;
+      let table = null;
+      let tbody = null;
+
+      while (currentSerial <= maxSerial) {
+        const date = excelSerialToDate(currentSerial);
+        const dayString = formatDateOnly(date);
+
+        if (dayString !== currentDay) {
+          currentDay = dayString;
+
+          dayBlock = document.createElement('div');
+          dayBlock.className = 'day-block';
+
+          const title = document.createElement('div');
+          title.className = 'day-title';
+          title.textContent = "📅 " + dayString;
+          dayBlock.appendChild(title);
+
+          table = document.createElement('table');
+          const thead = document.createElement('thead');
+          thead.innerHTML = `
+            <tr>
+              <th>Seriale Excel</th>
+              <th>Ora</th>
+            </tr>`;
+          table.appendChild(thead);
+
+          tbody = document.createElement('tbody');
+          table.appendChild(tbody);
+
+          dayBlock.appendChild(table);
+          resultsDiv.appendChild(dayBlock);
+        }
+
+        const row = document.createElement('tr');
+
+        if (currentSerial < nowSerial) {
+          row.classList.add('past');
+        } else if (!nextMarked) {
+          row.classList.add('next');
+          nextMarked = true;
+        }
+
+        const cellSerial = document.createElement('td');
+        cellSerial.textContent = currentSerial.toFixed(12);
+
+        const cellTime = document.createElement('td');
+        cellTime.textContent = date.toTimeString().split(' ')[0];
+
+        row.appendChild(cellSerial);
+        row.appendChild(cellTime);
+        tbody.appendChild(row);
+
+        currentSerial += intervalDays;
+      }
+    }
+
+    (async () => {
+      await fetchLastWB();
+      calculate();
+    })();
+  </script>
+
+</body>
+</html>
