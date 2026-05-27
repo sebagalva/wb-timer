@@ -100,7 +100,7 @@
 
     async function fetchLastWB() {
       try {
-        const res = await fetch("https://TUO_BACKEND_HOST/lastWB");
+        const res = await fetch("wb-timer-production.up.railway.app");
         const data = await res.json();
         document.getElementById("lastUpdate").value = data.lastWB;
       } catch (e) {
