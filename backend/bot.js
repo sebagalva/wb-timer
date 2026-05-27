@@ -2,7 +2,7 @@ mport { Client, GatewayIntentBits } from "discord.js";
 import fs from "fs";
 
 const TOKEN = process.env.DISCORD_TOKEN;
-const CHANNEL_ID = process.env.DISCORD_CHANNEL_ID;
+const CHANNEL_ID = 1325502016461602876;
 
 const client = new Client({
   intents: [
