@@ -2,9 +2,11 @@
   "name": "wb-backend",
   "type": "module",
   "dependencies": {
-    "discord.js": "^14.14.1"
+    "express": "^4.18.2",
+    "node-cron": "^3.0.0",
+    "node-fetch": "^3.3.0"
   },
   "scripts": {
-    "start": "node bot.js"
+    "start": "node server.js"
   }
 }
