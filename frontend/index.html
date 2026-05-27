@@ -63,6 +63,12 @@
   </label>
 
   <button onclick="calculate()">Ricalcola</button>
+  <button onclick="sendTodayToDiscord()">Invia previsioni di oggi su Discord</button>
+
+<label>
+  Discord Webhook URL:
+  <input type="text" id="discordWebhook" placeholder="https://discord.com/api/webhooks/...">
+</label>
 
   <h3>ST Current Time: <span id="currentTime"></span></h3>
 
@@ -183,6 +189,63 @@
 
         currentSerial += intervalDays;
       }
+      async function sendTodayToDiscord() {
+  const webhook = document.getElementById("discordWebhook").value.trim();
+  if (!webhook) {
+    alert("Inserisci il Webhook Discord.");
+    return;
+  }
+
+  const intervalMin = parseFloat(document.getElementById('intervalMin').value);
+  const lastUpdateSerial = parseFloat(document.getElementById('lastUpdate').value);
+
+  const intervalDays = intervalMin / (60 * 24);
+
+  // Calcolo previsioni del giorno corrente
+  const now = new Date();
+  const todayString = now.toISOString().split("T")[0];
+
+  let currentSerial = lastUpdateSerial + intervalDays;
+  let eventsToday = [];
+
+  for (let i = 0; i < 500; i++) {
+    const date = excelSerialToDate(currentSerial);
+    const dateString = date.toISOString().split("T")[0];
+
+    if (dateString === todayString) {
+      eventsToday.push(date.toTimeString().split(" ")[0]);
+    }
+
+    if (date > new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)) {
+      break;
+    }
+
+    currentSerial += intervalDays;
+  }
+
+  if (eventsToday.length === 0) {
+    alert("Nessuna previsione per oggi.");
+    return;
+  }
+
+  const message = {
+    content: `📅 **Previsioni WB per oggi (${todayString})**\n` +
+             eventsToday.map(t => `• ${t}`).join("\n")
+  };
+
+  try {
+    await fetch(webhook, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(message)
+    });
+
+    alert("Inviato su Discord.");
+  } catch (e) {
+    alert("Errore nell'invio al Webhook.");
+  }
+}
+
     }
 
     (async () => {
