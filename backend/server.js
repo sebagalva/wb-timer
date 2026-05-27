@@ -1,0 +1,33 @@
+import express from "express";
+import fs from "fs";
+import cron from "node-cron";
+import fetch from "node-fetch";
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+const WEBHOOK = "INSERISCI_WEBHOOK_DISCORD";
+
+app.get("/lastWB", (req, res) => {
+  const data = JSON.parse(fs.readFileSync("lastWB.json"));
+  res.json(data);
+});
+
+// Invio automatico ogni giorno alle 00:01
+cron.schedule("1 0 * * *", async () => {
+  const { lastWB } = JSON.parse(fs.readFileSync("lastWB.json"));
+
+  const message = {
+    content: `📅 Aggiornamento automatico WB\nUltimo WB registrato: ${lastWB}`
+  };
+
+  await fetch(WEBHOOK, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(message)
+  });
+
+  console.log("Previsioni inviate automaticamente.");
+});
+
+app.listen(PORT, () => console.log("Backend attivo su porta", PORT));
