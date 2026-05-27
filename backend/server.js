@@ -25,7 +25,7 @@ app.post("/updateWB", (req, res) => {
 console.log("Ricevuto dal bot:", req.body);
   }
 
-  fs.writeFileSync("lastWB.json", JSON.stringify({ lastWB }), "utf8");
+  fs.writeFileSync("/lastWB.json", JSON.stringify({ lastWB }), "utf8");
   console.log("Backend aggiornato:", lastWB);
 
   res.json({ ok: true });
