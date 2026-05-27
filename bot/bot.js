@@ -19,6 +19,8 @@ function dateToExcelSerial(date) {
 }
 
 client.on("messageCreate", msg => {
+  console.log("Messaggio ricevuto:", msg.content);  // <--- AGGIUNGERE QUESTO
+
   if (msg.channel.id !== CHANNEL_ID) return;
 
   const regex = /will start at (\d{2}):(\d{2}):(\d{2})!/i;
