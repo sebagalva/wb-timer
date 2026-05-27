@@ -1,8 +1,9 @@
 import { Client, GatewayIntentBits } from "discord.js";
-import fs from "fs";
+import fetch from "node-fetch";
 
 const TOKEN = process.env.DISCORD_TOKEN;
 const CHANNEL_ID = process.env.DISCORD_CHANNEL_ID;
+const BACKEND_URL = process.env.BACKEND_URL;
 
 const client = new Client({
   intents: [
@@ -18,12 +19,12 @@ function dateToExcelSerial(date) {
   return diffMs / (24 * 60 * 60 * 1000);
 }
 
-client.on("messageCreate", msg => {
-  console.log("Messaggio ricevuto:", msg.content);  // <--- AGGIUNGERE QUESTO
+client.on("messageCreate", async msg => {
+  console.log("Messaggio ricevuto:", msg.content);
 
   if (msg.channel.id !== CHANNEL_ID) return;
 
-  const regex = /will start at (\d{2}):(\d{2}):(\d{2})!/i;
+  const regex = /will start at (\d{2}):(\d{2}):(\d{2})/i;
   const match = msg.content.match(regex);
   if (!match) return;
 
@@ -37,10 +38,15 @@ client.on("messageCreate", msg => {
 
   const serial = dateToExcelSerial(wbTime);
 
-  await fetch(process.env.BACKEND_URL + "/updateWB", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ lastWB: serial })
+  console.log("Invio al backend:", serial);
+
+  await fetch(`${BACKEND_URL}/updateWB`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ lastWB: serial })
+  });
+
+  console.log("Aggiornato ultimo WB:", wbTime.toString(), "serial:", serial);
 });
 
 client.login(TOKEN);
