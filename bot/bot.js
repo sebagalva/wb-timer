@@ -37,9 +37,10 @@ client.on("messageCreate", msg => {
 
   const serial = dateToExcelSerial(wbTime);
 
-  fs.writeFileSync("/backend/lastWB.json", JSON.stringify({ lastWB: serial }), "utf8");
-
-  console.log("Aggiornato ultimo WB:", wbTime.toString(), "serial:", serial);
+  await fetch(process.env.BACKEND_URL + "/updateWB", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ lastWB: serial })
 });
 
 client.login(TOKEN);
