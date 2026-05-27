@@ -10,11 +10,15 @@ const WEBHOOK = process.env.DISCORD_WEBHOOK_URL;
 app.use(express.json());
 
 // GET: restituisce l’ultimo WB
-app.get("lastWB", (req, res) => {
-  const data = JSON.parse(fs.readFileSync("lastWB.json", "utf8"));
-  res.json(data);
+app.get("/lastWB", (req, res) => {
+  try {
+    const data = JSON.parse(fs.readFileSync("lastWB.json", "utf8"));
+    res.json(data);
+  } catch (err) {
+    console.error("Errore lettura lastWB.json:", err);
+    res.status(500).json({ error: "Errore lettura file" });
+  }
 });
-
 // POST: aggiornato dal bot
 app.post("/updateWB", (req, res) => {
   const { lastWB } = req.body;
