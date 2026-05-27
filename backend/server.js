@@ -1,3 +1,5 @@
+console.log("SERVER IN ESECUZIONE DA:", process.cwd());
+
 import express from "express";
 import fs from "fs";
 import cron from "node-cron";
