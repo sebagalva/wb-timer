@@ -24,3 +24,11 @@ cron.schedule("0 0 * * *", async () => {
 });
 
 app.listen(PORT, () => console.log("Backend attivo sulla porta", PORT));
+
+app.use(express.json());
+
+app.post("/updateWB", (req, res) => {
+  const { lastWB } = req.body;
+  fs.writeFileSync("lastWB.json", JSON.stringify({ lastWB }), "utf8");
+  res.json({ ok: true });
+});
