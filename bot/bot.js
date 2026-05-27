@@ -21,8 +21,6 @@ function dateToExcelSerial(date) {
 client.on("messageCreate", msg => {
   if (msg.channel.id !== CHANNEL_ID) return;
 
-  // Esempio messaggio:
-  // World Boss: Frostbite Amarok will start at 17:06:04!
   const regex = /will start at (\d{2}):(\d{2}):(\d{2})!/i;
   const match = msg.content.match(regex);
   if (!match) return;
@@ -31,13 +29,9 @@ client.on("messageCreate", msg => {
 
   const now = new Date();
   const wbTime = new Date();
-
   wbTime.setHours(hh, mm, ss, 0);
 
-  // Se l'orario è già passato → è domani
-  if (wbTime < now) {
-    wbTime.setDate(wbTime.getDate() + 1);
-  }
+  if (wbTime < now) wbTime.setDate(wbTime.getDate() + 1);
 
   const serial = dateToExcelSerial(wbTime);
 
