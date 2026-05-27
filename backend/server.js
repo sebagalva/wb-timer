@@ -19,8 +19,9 @@ app.get("/lastWB", (req, res) => {
 app.post("/updateWB", (req, res) => {
   const { lastWB } = req.body;
 
-  if (!lastWB) {
-    return res.status(400).json({ error: "lastWB mancante" });
+ if (typeof lastWB !== "number") {
+    return res.status(400).json({ error: "lastWB deve essere un numero" });
+
   }
 
   fs.writeFileSync("lastWB.json", JSON.stringify({ lastWB }), "utf8");
