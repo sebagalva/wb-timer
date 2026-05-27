@@ -7,11 +7,29 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const WEBHOOK = process.env.DISCORD_WEBHOOK_URL;
 
+app.use(express.json());
+
+// GET: restituisce l’ultimo WB
 app.get("/lastWB", (req, res) => {
   const data = JSON.parse(fs.readFileSync("lastWB.json", "utf8"));
   res.json(data);
 });
 
+// POST: aggiornato dal bot
+app.post("/updateWB", (req, res) => {
+  const { lastWB } = req.body;
+
+  if (!lastWB) {
+    return res.status(400).json({ error: "lastWB mancante" });
+  }
+
+  fs.writeFileSync("lastWB.json", JSON.stringify({ lastWB }), "utf8");
+  console.log("Backend aggiornato:", lastWB);
+
+  res.json({ ok: true });
+});
+
+// Cron giornaliero (opzionale)
 cron.schedule("0 0 * * *", async () => {
   const data = JSON.parse(fs.readFileSync("lastWB.json", "utf8"));
   await fetch(WEBHOOK, {
@@ -24,11 +42,3 @@ cron.schedule("0 0 * * *", async () => {
 });
 
 app.listen(PORT, () => console.log("Backend attivo sulla porta", PORT));
-
-app.use(express.json());
-
-app.post("/updateWB", (req, res) => {
-  const { lastWB } = req.body;
-  fs.writeFileSync("lastWB.json", JSON.stringify({ lastWB }), "utf8");
-  res.json({ ok: true });
-});
