@@ -1,4 +1,4 @@
-mport { Client, GatewayIntentBits } from "discord.js";
+import { Client, GatewayIntentBits } from "discord.js";
 import fs from "fs";
 
 const TOKEN = process.env.DISCORD_TOKEN;
