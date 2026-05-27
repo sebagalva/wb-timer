@@ -1,5 +1,5 @@
 {
-  "name": "wb-bot",
+  "name": "wb-backend",
   "type": "module",
   "dependencies": {
     "discord.js": "^14.14.1"
