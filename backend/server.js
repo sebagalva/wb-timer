@@ -10,7 +10,7 @@ const WEBHOOK = process.env.DISCORD_WEBHOOK_URL;
 app.use(express.json());
 
 // GET: restituisce l’ultimo WB
-app.get("/lastWB", (req, res) => {
+app.get("lastWB", (req, res) => {
   const data = JSON.parse(fs.readFileSync("lastWB.json", "utf8"));
   res.json(data);
 });
@@ -21,7 +21,8 @@ app.post("/updateWB", (req, res) => {
 
  if (typeof lastWB !== "number") {
     return res.status(400).json({ error: "lastWB deve essere un numero" });
-
+   
+console.log("Ricevuto dal bot:", req.body);
   }
 
   fs.writeFileSync("lastWB.json", JSON.stringify({ lastWB }), "utf8");
