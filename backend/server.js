@@ -91,7 +91,7 @@ app.get("/nextWB", async (req, res) => {
     // Se non ci sono previsioni future → serve un nuovo update dal bot
     if (future.length === 0) {
       return res.json({
-        error: "Nessuna previsione futura disponibile. Attendi il prossimo aggiornamento dal bot."
+        error: "No future forecast available. Please wait for the next update from the bot."
       });
     }
 
