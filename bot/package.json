@@ -8,4 +8,9 @@
   "scripts": {
     "start": "node bot.js"
   }
+  "scripts": {
+  "start": "node bot.js",
+  "forward": "node forwardFixer.js"
+}
+
 }
