@@ -6,11 +6,7 @@
     "tesseract.js": "^7.0.0"
   },
   "scripts": {
-    "start": "node bot.js"
+    "start": "node bot.js",
+    "forward": "node forwardFixer.js"
   }
-  "scripts": {
-  "start": "node bot.js",
-  "forward": "node forwardFixer.js"
-}
-
 }
