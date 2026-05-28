@@ -28,7 +28,7 @@ app.get("/lastWB", async (req, res) => {
 
 // POST: aggiorna dal bot
 app.post("/updateWB", async (req, res) => {
-    const lastWB = req.body;
+    const { lastWB } = req.body;
 
     if (typeof lastWB !== "number") {
         return res.status(400).json({ error: "lastWB deve essere un numero" });
@@ -43,6 +43,7 @@ app.post("/updateWB", async (req, res) => {
         res.status(500).json({ error: "Errore aggiornamento DB" });
     }
 });
+
 
 app.listen(PORT, () => console.log("Backend attivo sulla porta", PORT));
 
