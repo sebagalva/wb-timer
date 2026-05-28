@@ -1,0 +1,11 @@
+{
+  "name": "wb-bot",
+  "type": "module",
+  "dependencies": {
+    "discord.js": "^14.14.1",
+    "tesseract.js": "^7.0.0"
+  },
+  "scripts": {
+    "start": "node bot.js"
+  }
+}
