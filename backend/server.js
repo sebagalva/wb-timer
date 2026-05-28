@@ -75,3 +75,52 @@ app.post("/updateWB", async (req, res) => {
 
 app.listen(PORT, () => console.log("Backend attivo sulla porta", PORT));
 
+app.get("/nextWB", async (req, res) => {
+    try {
+        const result = await pool.query("SELECT lastWB, predictions FROM wb WHERE id = 1");
+
+        let predictions = result.rows[0].predictions || [];
+        const now = new Date();
+
+        // Filtra solo le previsioni future
+        const future = predictions.filter(p => excelToDate(p) > now);
+
+        // Se non ci sono previsioni future, restituiamo errore
+        if (future.length === 0) {
+            return res.json({
+                error: "Nessuna previsione futura disponibile. Attendi il prossimo aggiornamento dal bot."
+            });
+        }
+
+        // Il prossimo WB è il primo valore futuro
+        const nextWB_serial = future[0];
+        const nextWB_date = excelToDate(nextWB_serial);
+
+        // Le restanti previsioni
+        const remaining_serial = future.slice(1);
+        const remaining_date = remaining_serial.map(p => excelToDate(p));
+
+        // Aggiorna il DB eliminando le previsioni passate
+        await pool.query(
+            "UPDATE wb SET predictions = $1 WHERE id = 1",
+            [future]
+        );
+
+        res.json({
+            nextWB: {
+                serial: nextWB_serial,
+                date: nextWB_date
+            },
+            remainingPredictions: {
+                serial: remaining_serial,
+                date: remaining_date
+            }
+        });
+
+    } catch (err) {
+        console.error("Errore GET /nextWB:", err);
+        res.status(500).json({ error: "Errore lettura DB" });
+    }
+});
+
+
