@@ -29,13 +29,17 @@ client.on("messageCreate", async msg => {
 
   let match = null;
 
-  // 1️⃣ Prova a leggere dal messaggio normale
+  // 1️⃣ Se è un messaggio normale, prova a leggere il contenuto
   if (msg.content) {
     match = msg.content.match(regex);
   }
 
   // 2️⃣ Se non trovato, prova a leggere dagli embed
   if (!match && msg.embeds.length > 0) {
+
+    // ❗ Accetta SOLO embed inoltrati (non quelli originali dei bot)
+    if (msg.author.bot) return;
+
     const embed = msg.embeds[0];
 
     match =
