@@ -1,13 +1,16 @@
 console.log("SERVER IN ESECUZIONE DA:", process.cwd());
 
 import express from "express";
+import cors from "cors";   // <--- AGGIUNTO
 import pkg from "pg";
 const { Pool } = pkg;
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.use(cors());           // <--- AGGIUNTO
 app.use(express.json());
+
 
 // Connessione al DB PostgreSQL di Railway
 const pool = new Pool({
