@@ -20,8 +20,10 @@ const pool = new Pool({
 
 // Convertitore Excel Serial → Data JS
 function excelToDate(serial) {
-  return new Date((serial - 25569) * 86400 * 1000);
+  const utcMillis = (serial - 25569) * 86400 * 1000;
+  return new Date(utcMillis).toISOString(); // <-- sempre UTC
 }
+
 
 // GET: restituisce ultimo WB + previsioni
 app.get("/lastWB", async (req, res) => {
