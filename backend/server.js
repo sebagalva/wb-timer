@@ -34,15 +34,27 @@ app.post("/updateWB", async (req, res) => {
         return res.status(400).json({ error: "lastWB deve essere un numero" });
     }
 
+    const interval = 390.75 / 1440;
+    const predictions = [];
+
+    for (let i = 1; i <= 10; i++) {
+        predictions.push(lastWB + interval * i);
+    }
+
     try {
-        await pool.query("UPDATE wb SET lastWB = $1 WHERE id = 1", [lastWB]);
-        console.log("Backend aggiornato:", lastWB);
+        await pool.query(
+            "UPDATE wb SET lastWB = $1, predictions = $2 WHERE id = 1",
+            [lastWB, predictions]
+        );
+
+        console.log("Backend aggiornato:", lastWB, "Previsioni:", predictions);
         res.json({ ok: true });
     } catch (err) {
         console.error("Errore DB UPDATE:", err);
         res.status(500).json({ error: "Errore aggiornamento DB" });
     }
 });
+
 
 
 app.listen(PORT, () => console.log("Backend attivo sulla porta", PORT));
