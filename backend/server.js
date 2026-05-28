@@ -16,15 +16,31 @@ const pool = new Pool({
 });
 
 // GET: restituisce l'ultimo WB
+function excelToDate(serial) {
+    return new Date((serial - 25569) * 86400 * 1000);
+}
+
 app.get("/lastWB", async (req, res) => {
     try {
-        const result = await pool.query("SELECT lastWB FROM wb WHERE id = 1");
-        res.json({ lastWB: result.rows[0].lastwb });
+        const result = await pool.query("SELECT lastWB, predictions FROM wb WHERE id = 1");
+
+        const lastWB = result.rows[0].lastwb;
+        const predictions = result.rows[0].predictions;
+
+        res.json({
+            lastWB_serial: lastWB,
+            lastWB_date: excelToDate(lastWB),
+
+            predictions_serial: predictions,
+            predictions_date: predictions.map(p => excelToDate(p))
+        });
+
     } catch (err) {
         console.error("Errore DB GET:", err);
         res.status(500).json({ error: "Errore lettura DB" });
     }
 });
+
 
 // POST: aggiorna dal bot
 app.post("/updateWB", async (req, res) => {
