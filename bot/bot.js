@@ -1,5 +1,6 @@
 import { Client, GatewayIntentBits } from "discord.js";
 import fetch from "node-fetch";
+import Tesseract from "tesseract.js";
 
 const TOKEN = process.env.DISCORD_TOKEN;
 const CHANNEL_ID = process.env.DISCORD_CHANNEL_ID;
@@ -19,8 +20,6 @@ function dateToExcelSerial(date) {
   return diffMs / (24 * 60 * 60 * 1000);
 }
 
-import Tesseract from "tesseract.js";
-
 client.on("messageCreate", async msg => {
   console.log("Messaggio ricevuto:", msg.content || msg.embeds[0]?.description);
 
@@ -34,21 +33,53 @@ client.on("messageCreate", async msg => {
     match = msg.content.match(regex);
   }
 
-  // 2️⃣ Embed (solo se non è un bot)
-  if (!match && msg.embeds.length > 0 && !msg.author.bot) {
+  // 2️⃣ Testo negli embed (title, description, footer, fields)
+  if (!match && msg.embeds.length > 0) {
     const embed = msg.embeds[0];
+
     match =
       embed.title?.match(regex) ||
       embed.description?.match(regex) ||
+      embed.footer?.text?.match(regex) ||
       null;
+
+    if (!match && embed.fields?.length > 0) {
+      for (const f of embed.fields) {
+        match = f.value?.match(regex) || f.name?.match(regex);
+        if (match) break;
+      }
+    }
   }
 
-  // 3️⃣ OCR su immagini inoltrate
+  // 3️⃣ OCR su immagini negli embed (inoltri)
+  if (!match && msg.embeds.length > 0) {
+    const embed = msg.embeds[0];
+    const imageUrl =
+      embed.image?.url ||
+      embed.thumbnail?.url ||
+      null;
+
+    if (imageUrl) {
+      console.log("Eseguo OCR su immagine embed:", imageUrl);
+
+      try {
+        const result = await Tesseract.recognize(imageUrl, "eng");
+        const text = result.data.text;
+        console.log("OCR output:", text);
+
+        match = text.match(regex);
+      } catch (err) {
+        console.error("Errore OCR:", err);
+      }
+    }
+  }
+
+  // 4️⃣ OCR su allegati normali
   if (!match && msg.attachments.size > 0) {
     const attachment = msg.attachments.first();
     const imageUrl = attachment.url;
 
-    console.log("Eseguo OCR su:", imageUrl);
+    console.log("Eseguo OCR su attachment:", imageUrl);
 
     try {
       const result = await Tesseract.recognize(imageUrl, "eng");
@@ -84,7 +115,5 @@ client.on("messageCreate", async msg => {
 
   console.log("Aggiornato ultimo WB:", wbTime.toString(), "serial:", serial);
 });
-
-
 
 client.login(TOKEN);
