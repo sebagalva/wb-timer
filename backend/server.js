@@ -1,16 +1,15 @@
 console.log("SERVER IN ESECUZIONE DA:", process.cwd());
 
 import express from "express";
-import cors from "cors";   // <--- IMPORT CORRETTO
+import cors from "cors";
 import pkg from "pg";
 const { Pool } = pkg;
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());           // <--- ATTIVA CORS
+app.use(cors());
 app.use(express.json());
-
 
 // Connessione al DB PostgreSQL di Railway
 const pool = new Pool({
@@ -18,12 +17,11 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-// Convertitore Excel Serial → Data JS
+// Convertitore Excel Serial → ISO UTC
 function excelToDate(serial) {
   const utcMillis = (serial - 25569) * 86400 * 1000;
-  return new Date(utcMillis).toISOString(); // <-- sempre UTC
+  return new Date(utcMillis).toISOString(); // <-- sempre UTC+0
 }
-
 
 // GET: restituisce ultimo WB + previsioni
 app.get("/lastWB", async (req, res) => {
@@ -83,27 +81,26 @@ app.get("/nextWB", async (req, res) => {
     const result = await pool.query("SELECT lastWB, predictions FROM wb WHERE id = 1");
 
     let predictions = result.rows[0].predictions || [];
-    const now = new Date();
+    const now = new Date(); // UTC automatico
 
     // Filtra solo le previsioni future
-    const future = predictions.filter(p => excelToDate(p) > now);
+    const future = predictions.filter(p => new Date(excelToDate(p)) > now);
 
-    // Se non ci sono previsioni future → serve un nuovo update dal bot
     if (future.length === 0) {
       return res.json({
-        error: "No future forecast available. Please wait for the next update from the bot."
+        error: "Nessuna previsione futura disponibile. Attendi il prossimo aggiornamento dal bot."
       });
     }
 
-    // Il prossimo WB è il primo valore futuro
+    // Prossimo WB
     const nextWB_serial = future[0];
     const nextWB_date = excelToDate(nextWB_serial);
 
-    // Le restanti previsioni
+    // Previsioni rimanenti
     const remaining_serial = future.slice(1);
     const remaining_date = remaining_serial.map(p => excelToDate(p));
 
-    // Aggiorna il DB eliminando le previsioni passate
+    // Aggiorna DB eliminando previsioni passate
     await pool.query(
       "UPDATE wb SET predictions = $1 WHERE id = 1",
       [future]
