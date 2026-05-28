@@ -26,39 +26,52 @@ function excelToDate(serial) {
 // GET: prossimo WB + previsioni future
 app.get("/nextWB", async (req, res) => {
   try {
-    const result = await pool.query("SELECT lastWB, predictions FROM wb WHERE id = 1");
+    const result = await pool.query("SELECT lastWB FROM wb WHERE id = 1");
 
     const lastWB = result.rows[0].lastwb;
-    let predictions = result.rows[0].predictions || [];
-
     const now = Date.now();
+    const interval = 390.75 / 1440;
 
-    // Filtra solo previsioni future
-    let future = predictions.filter(p => Date.parse(excelToDate(p)) > now);
+    let next;
 
-    // Se non ci sono previsioni future → genera la prima usando lastWB
-    if (future.length === 0) {
-      const interval = 390.75 / 1440;
-      const next = lastWB + interval;
-      future = [next];
-      predictions = [next];
-      await pool.query("UPDATE wb SET predictions = $1 WHERE id = 1", [predictions]);
+    // Caso 1 — Il WB inviato dal bot è nel FUTURO → è il prossimo WB
+    if (Date.parse(excelToDate(lastWB)) > now) {
+      next = lastWB;
     }
 
-    const nextWB_serial = future[0];
-    const nextWB_date = excelToDate(nextWB_serial);
+    // Caso 2 — Il WB è nel PASSATO → calcola il primo evento futuro
+    else {
+      next = lastWB + interval;
 
-    const remaining_serial = future.slice(1);
-    const remaining_date = remaining_serial.map(p => excelToDate(p));
+      // Se anche questo è passato, continua a generare finché trovi un futuro
+      while (Date.parse(excelToDate(next)) <= now) {
+        next += interval;
+      }
+    }
 
+    // Genera altre 14 previsioni future
+    const remaining = [];
+    let temp = next;
+    for (let i = 1; i <= 14; i++) {
+      temp += interval;
+      remaining.push(temp);
+    }
+
+    // Salva nel DB
+    await pool.query(
+      "UPDATE wb SET predictions = $1 WHERE id = 1",
+      [[next, ...remaining]]
+    );
+
+    // Risposta API
     res.json({
       nextWB: {
-        serial: nextWB_serial,
-        date: nextWB_date
+        serial: next,
+        date: excelToDate(next)
       },
       remainingPredictions: {
-        serial: remaining_serial,
-        date: remaining_date
+        serial: remaining,
+        date: remaining.map(excelToDate)
       }
     });
 
@@ -76,17 +89,11 @@ app.post("/updateWB", async (req, res) => {
     return res.status(400).json({ error: "lastWB deve essere un numero" });
   }
 
-  const interval = 390.75 / 1440;
-  const predictions = [];
-
-  for (let i = 1; i <= 10; i++) {
-    predictions.push(lastWB + interval * i);
-  }
-
+  // Salva solo lastWB, il resto lo calcola /nextWB
   try {
     await pool.query(
-      "UPDATE wb SET lastWB = $1, predictions = $2 WHERE id = 1",
-      [lastWB, predictions]
+      "UPDATE wb SET lastWB = $1 WHERE id = 1",
+      [lastWB]
     );
 
     res.json({ ok: true });
@@ -97,4 +104,3 @@ app.post("/updateWB", async (req, res) => {
 });
 
 app.listen(PORT, () => console.log("Backend attivo sulla porta", PORT));
-
