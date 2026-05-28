@@ -1,14 +1,14 @@
 console.log("SERVER IN ESECUZIONE DA:", process.cwd());
 
 import express from "express";
-import cors from "cors";   // <--- AGGIUNTO
+import cors from "cors";   // <--- IMPORT CORRETTO
 import pkg from "pg";
 const { Pool } = pkg;
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());           // <--- AGGIUNTO
+app.use(cors());           // <--- ATTIVA CORS
 app.use(express.json());
 
 
