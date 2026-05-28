@@ -19,36 +19,49 @@ function dateToExcelSerial(date) {
   return diffMs / (24 * 60 * 60 * 1000);
 }
 
+import Tesseract from "tesseract.js";
+
 client.on("messageCreate", async msg => {
   console.log("Messaggio ricevuto:", msg.content || msg.embeds[0]?.description);
 
   if (msg.channel.id !== CHANNEL_ID) return;
 
-  // Regex per orario hh:mm:ss
   const regex = /(\d{2}):(\d{2}):(\d{2})/;
-
   let match = null;
 
-  // 1️⃣ Se è un messaggio normale, prova a leggere il contenuto
+  // 1️⃣ Messaggio normale
   if (msg.content) {
     match = msg.content.match(regex);
   }
 
-  // 2️⃣ Se non trovato, prova a leggere dagli embed
-  if (!match && msg.embeds.length > 0) {
-
-    // ❗ Accetta SOLO embed inoltrati (non quelli originali dei bot)
-    if (msg.author.bot) return;
-
+  // 2️⃣ Embed (solo se non è un bot)
+  if (!match && msg.embeds.length > 0 && !msg.author.bot) {
     const embed = msg.embeds[0];
-
     match =
       embed.title?.match(regex) ||
       embed.description?.match(regex) ||
       null;
   }
 
-  // Se ancora nulla, ignora
+  // 3️⃣ OCR su immagini inoltrate
+  if (!match && msg.attachments.size > 0) {
+    const attachment = msg.attachments.first();
+    const imageUrl = attachment.url;
+
+    console.log("Eseguo OCR su:", imageUrl);
+
+    try {
+      const result = await Tesseract.recognize(imageUrl, "eng");
+      const text = result.data.text;
+      console.log("OCR output:", text);
+
+      match = text.match(regex);
+    } catch (err) {
+      console.error("Errore OCR:", err);
+    }
+  }
+
+  // Se ancora nulla → ignora
   if (!match) return;
 
   const [_, hh, mm, ss] = match;
@@ -71,6 +84,7 @@ client.on("messageCreate", async msg => {
 
   console.log("Aggiornato ultimo WB:", wbTime.toString(), "serial:", serial);
 });
+
 
 
 client.login(TOKEN);
