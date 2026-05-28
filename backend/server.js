@@ -17,10 +17,10 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-// Convertitore Excel Serial → ISO UTC
+// Convertitore Excel Serial → ISO UTC (mantiene secondi reali)
 function excelToDate(serial) {
   const utcMillis = (serial - 25569) * 86400 * 1000;
-  return new Date(utcMillis).toISOString(); // <-- sempre UTC+0
+  return new Date(utcMillis).toISOString();
 }
 
 // GET: restituisce ultimo WB + previsioni
@@ -81,14 +81,19 @@ app.get("/nextWB", async (req, res) => {
     const result = await pool.query("SELECT lastWB, predictions FROM wb WHERE id = 1");
 
     let predictions = result.rows[0].predictions || [];
-    const now = new Date(); // UTC automatico
 
-    // Filtra solo le previsioni future
-    const future = predictions.filter(p => new Date(excelToDate(p)) > now);
+    // Ora attuale in UTC (timestamp)
+    const now = Date.now();
+
+    // Filtra solo le previsioni future (timestamp UTC)
+    const future = predictions.filter(p => {
+      const t = Date.parse(excelToDate(p));
+      return t > now;
+    });
 
     if (future.length === 0) {
       return res.json({
-        error: "Nessuna previsione futura disponibile. Attendi il prossimo aggiornamento dal bot."
+        error: "No future forecast available. Please wait for the next update from the bot."
       });
     }
 
