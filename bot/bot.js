@@ -20,12 +20,31 @@ function dateToExcelSerial(date) {
 }
 
 client.on("messageCreate", async msg => {
-  console.log("Messaggio ricevuto:", msg.content);
+  console.log("Messaggio ricevuto:", msg.content || msg.embeds[0]?.description);
 
   if (msg.channel.id !== CHANNEL_ID) return;
 
-  const regex = /will start at (\d{2}):(\d{2}):(\d{2})/i;
-  const match = msg.content.match(regex);
+  // Regex per orario hh:mm:ss
+  const regex = /(\d{2}):(\d{2}):(\d{2})/;
+
+  let match = null;
+
+  // 1️⃣ Prova a leggere dal messaggio normale
+  if (msg.content) {
+    match = msg.content.match(regex);
+  }
+
+  // 2️⃣ Se non trovato, prova a leggere dagli embed
+  if (!match && msg.embeds.length > 0) {
+    const embed = msg.embeds[0];
+
+    match =
+      embed.title?.match(regex) ||
+      embed.description?.match(regex) ||
+      null;
+  }
+
+  // Se ancora nulla, ignora
   if (!match) return;
 
   const [_, hh, mm, ss] = match;
@@ -40,14 +59,14 @@ client.on("messageCreate", async msg => {
 
   console.log("Invio al backend:", serial);
 
-await fetch(`${process.env.BACKEND_URL}/updateWB`, {
+  await fetch(`${BACKEND_URL}/updateWB`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ lastWB: serial })
-});
-
+  });
 
   console.log("Aggiornato ultimo WB:", wbTime.toString(), "serial:", serial);
 });
+
 
 client.login(TOKEN);
