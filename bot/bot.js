@@ -43,7 +43,7 @@ client.on("messageCreate", async msg => {
 await fetch(`${process.env.BACKEND_URL}/updateWB`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ lastWB: numero })
+    body: JSON.stringify({ lastWB: serial })
 });
 
 
