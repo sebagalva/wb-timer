@@ -54,9 +54,12 @@ client.on("messageCreate", async msg => {
   // 3️⃣ OCR su immagini negli embed (inoltri)
   if (!match && msg.embeds.length > 0) {
     const embed = msg.embeds[0];
+
+    // SUPPORTO COMPLETO AGLI INOLTRI
     const imageUrl =
       embed.image?.url ||
       embed.thumbnail?.url ||
+      embed.data?.image?.url ||   // <--- QUESTA È LA CHIAVE PER GLI INOLTRI
       null;
 
     if (imageUrl) {
