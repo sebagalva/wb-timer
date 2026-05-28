@@ -40,11 +40,12 @@ client.on("messageCreate", async msg => {
 
   console.log("Invio al backend:", serial);
 
-  await fetch(`${BACKEND_URL}/updateWB`, {
+ await fetch(`${process.env.BACKEND_URL}/updateWB`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ lastWB: serial })
-  });
+    body: JSON.stringify({ lastWB: 5 }) // ✔️ CORRETTO
+});
+
 
   console.log("Aggiornato ultimo WB:", wbTime.toString(), "serial:", serial);
 });
