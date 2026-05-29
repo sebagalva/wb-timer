@@ -19,7 +19,7 @@ function convertToUTC(orarioLocale) {
   return new Date(local.getTime() - local.getTimezoneOffset() * 60000);
 }
 
-// Estrae SOLO l’orario del World Boss usando il titolo <h2>World bosses</h2>
+// Estrae SOLO l’orario del World Boss (qualsiasi boss)
 async function estraiOrarioWorldBoss() {
   const browser = await puppeteer.launch({
     headless: "new",
@@ -30,17 +30,18 @@ async function estraiOrarioWorldBoss() {
   await page.goto(URL, { waitUntil: "networkidle0" });
 
   const testo = await page.evaluate(() => {
-    // Trova il titolo della sezione "World bosses"
-    const headers = Array.from(document.querySelectorAll("h2.title_Tsx2"));
-    const worldBossHeader = headers.find(h => h.textContent.includes("World bosses"));
-    if (!worldBossHeader) return null;
+    // 1. Trova tutte le card degli eventi
+    const cards = Array.from(document.querySelectorAll(".card_qufK"));
 
-    // La card del World Boss è subito dopo il titolo
-    const card = worldBossHeader.nextElementSibling;
-    if (!card) return null;
+    // 2. Cerca quella che contiene il titolo "World Boss Event"
+    const worldBossCard = cards.find(c =>
+      c.textContent.includes("World Boss Event")
+    );
 
-    // Dentro la card, trova lo span con l'orario
-    const spans = Array.from(card.querySelectorAll("span"));
+    if (!worldBossCard) return null;
+
+    // 3. Dentro la card, trova lo span con l'orario
+    const spans = Array.from(worldBossCard.querySelectorAll("span"));
     const target = spans.find(s => s.textContent.includes(","));
     return target ? target.textContent.trim() : null;
   });
