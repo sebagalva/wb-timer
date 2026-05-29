@@ -9,7 +9,7 @@ const client = new Client({
 });
 
 const URL = "https://wiki.olympusgg.com/scheduled-events";
-const SELECTOR = ".event-time span";
+const SELECTOR = "span:contains(',')";
 
 let ultimoOrarioUTC = null;
 
