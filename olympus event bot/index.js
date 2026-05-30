@@ -30,47 +30,44 @@ async function estraiOrarioWorldBoss() {
   await page.goto(URL, { waitUntil: "networkidle0" });
 
   // Aspetta che la sezione sia caricata
-  await page.waitForSelector("h2.title_Tsx2");
+  await page.waitForSelector(".header_hUwx");
 
-  // Trova l'header della sezione World bosses SENZA $x()
-  const headerHandle = await page.evaluateHandle(() => {
+  // Trova la sezione "World bosses"
+  const sectionHandle = await page.evaluateHandle(() => {
     const headers = Array.from(document.querySelectorAll(".header_hUwx"));
     return headers.find(h => h.innerText.includes("World bosses")) || null;
   });
 
-  if (!headerHandle) {
+  if (!sectionHandle) {
     await browser.close();
     return null;
   }
 
-  // Controlla se è chiusa
+  // Espandi se chiusa
   const isExpanded = await page.evaluate(
     el => el.getAttribute("aria-expanded"),
-    headerHandle
+    sectionHandle
   );
 
   if (isExpanded === "false") {
-    // Clicca per espandere
-    await headerHandle.click();
-
-    // Aspetta che diventi expanded
+    await sectionHandle.click();
     await page.waitForFunction(() => {
       const el = document.querySelector(".header_hUwx[aria-expanded='true']");
       return !!el;
     });
   }
 
-  // Ora gli orari sono nel DOM
+  // Ora estrai l'orario SOLO dalla sezione World bosses
   const testo = await page.evaluate(() => {
-    const cards = Array.from(document.querySelectorAll(".card_qufK"));
-    const worldBossCard = cards.find(c =>
-      c.textContent.includes("World Boss Event")
-    );
+    const section = Array.from(document.querySelectorAll(".header_hUwx"))
+      .find(h => h.innerText.includes("World bosses"))
+      ?.parentElement;
 
-    if (!worldBossCard) return null;
+    if (!section) return null;
 
-    const spans = Array.from(worldBossCard.querySelectorAll("span"));
-    const target = spans.find(s => s.textContent.includes(","));
+    // Cerca la stringa tipo: "30 mag, 18:42 → 30 mag, 19:12"
+    const spans = Array.from(section.querySelectorAll("span"));
+    const target = spans.find(s => s.textContent.includes("→"));
     return target ? target.textContent.trim() : null;
   });
 
@@ -87,7 +84,14 @@ async function controllaWorldBoss() {
     return;
   }
 
-  const match = testo.match(/(\d{2}:\d{2})/);
+  console.log("Testo estratto:", testo);
+
+  // Prende solo la parte prima della freccia
+  const parteSinistra = testo.split("→")[0];
+
+  // Estrae l'orario locale (es: "18:42")
+  const match = parteSinistra.match(/(\d{2}:\d{2})/);
+
   if (!match) {
     console.log("Formato orario non valido");
     return;
@@ -98,6 +102,7 @@ async function controllaWorldBoss() {
 
   console.log("World Boss locale:", orarioLocale);
   console.log("World Boss UTC:", orarioUTC.toISOString().slice(11, 16));
+  console.log("Ultimo salvato:", ultimoOrarioUTC?.toISOString().slice(11, 16));
 
   // Notifica solo se l’orario è cambiato
   if (ultimoOrarioUTC && orarioUTC.getTime() !== ultimoOrarioUTC.getTime()) {
