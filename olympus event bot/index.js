@@ -19,7 +19,7 @@ function convertToUTC(orarioLocale) {
   return new Date(local.getTime() - local.getTimezoneOffset() * 60000);
 }
 
-// Estrae SOLO l’orario del World Boss (qualsiasi boss)
+// Estrae SOLO l’orario del World Boss
 async function estraiOrarioWorldBoss() {
   const browser = await puppeteer.launch({
     headless: "new",
@@ -29,18 +29,46 @@ async function estraiOrarioWorldBoss() {
   const page = await browser.newPage();
   await page.goto(URL, { waitUntil: "networkidle0" });
 
-  const testo = await page.evaluate(() => {
-    // 1. Trova tutte le card degli eventi
-    const cards = Array.from(document.querySelectorAll(".card_qufK"));
+  // Aspetta che la sezione World bosses sia presente
+  await page.waitForSelector("h2.title_Tsx2");
 
-    // 2. Cerca quella che contiene il titolo "World Boss Event"
+  // Trova l'header della sezione World bosses
+  const header = await page.$x(
+    "//div[contains(@class,'header_hUwx')][.//h2[text()='World bosses']]"
+  );
+
+  if (!header || header.length === 0) {
+    await browser.close();
+    return null;
+  }
+
+  const headerDiv = header[0];
+
+  // Controlla se è chiusa (aria-expanded="false")
+  const isExpanded = await page.evaluate(
+    el => el.getAttribute("aria-expanded"),
+    headerDiv
+  );
+
+  if (isExpanded === "false") {
+    await headerDiv.click();
+
+    // Aspetta che si espanda
+    await page.waitForFunction(() => {
+      const el = document.querySelector(".header_hUwx[aria-expanded='true']");
+      return !!el;
+    });
+  }
+
+  // Ora gli span con l'orario ESISTONO
+  const testo = await page.evaluate(() => {
+    const cards = Array.from(document.querySelectorAll(".card_qufK"));
     const worldBossCard = cards.find(c =>
       c.textContent.includes("World Boss Event")
     );
 
     if (!worldBossCard) return null;
 
-    // 3. Dentro la card, trova lo span con l'orario
     const spans = Array.from(worldBossCard.querySelectorAll("span"));
     const target = spans.find(s => s.textContent.includes(","));
     return target ? target.textContent.trim() : null;
