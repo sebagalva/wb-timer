@@ -29,38 +29,38 @@ async function estraiOrarioWorldBoss() {
   const page = await browser.newPage();
   await page.goto(URL, { waitUntil: "networkidle0" });
 
-  // Aspetta che la sezione World bosses sia presente
+  // Aspetta che la sezione sia caricata
   await page.waitForSelector("h2.title_Tsx2");
 
-  // Trova l'header della sezione World bosses
-  const header = await page.$x(
-    "//div[contains(@class,'header_hUwx')][.//h2[text()='World bosses']]"
-  );
+  // Trova l'header della sezione World bosses SENZA $x()
+  const headerHandle = await page.evaluateHandle(() => {
+    const headers = Array.from(document.querySelectorAll(".header_hUwx"));
+    return headers.find(h => h.innerText.includes("World bosses")) || null;
+  });
 
-  if (!header || header.length === 0) {
+  if (!headerHandle) {
     await browser.close();
     return null;
   }
 
-  const headerDiv = header[0];
-
-  // Controlla se è chiusa (aria-expanded="false")
+  // Controlla se è chiusa
   const isExpanded = await page.evaluate(
     el => el.getAttribute("aria-expanded"),
-    headerDiv
+    headerHandle
   );
 
   if (isExpanded === "false") {
-    await headerDiv.click();
+    // Clicca per espandere
+    await headerHandle.click();
 
-    // Aspetta che si espanda
+    // Aspetta che diventi expanded
     await page.waitForFunction(() => {
       const el = document.querySelector(".header_hUwx[aria-expanded='true']");
       return !!el;
     });
   }
 
-  // Ora gli span con l'orario ESISTONO
+  // Ora gli orari sono nel DOM
   const testo = await page.evaluate(() => {
     const cards = Array.from(document.querySelectorAll(".card_qufK"));
     const worldBossCard = cards.find(c =>
@@ -113,7 +113,7 @@ async function controllaWorldBoss() {
 }
 
 // Avvio bot
-client.once("ready", () => {
+client.once("clientReady", () => {
   console.log(`Bot avviato come ${client.user.tag}`);
 
   // Controllo giornaliero alle 09:00
